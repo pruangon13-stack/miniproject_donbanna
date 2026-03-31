@@ -1,133 +1,91 @@
 "use client";
-import React, { useEffect, useState } from 'react';
-import axios from 'axios';
-import { Container, Row, Col, Button, Card, Spinner, Alert, Badge } from 'react-bootstrap';
-import { useParams, useRouter } from 'next/navigation';
+import React, { useState } from 'react';  //เรียกใช้ react ดึงเอาเครืองมือ useState มาใช้
+import axios from 'axios'; //เรียกใช้ axios เพื่อเอาไว้พูดคุยกับเซิฟเวอร์ เพื่อการส่งข้อมูล
+import { Form, Button, Card, Alert, Nav, Container } from 'react-bootstrap'; //ดึึง  react-boosstrap เพื่อตกแต่งหน้าเว็ป
 
-export default function ProductDetail() {
-    const { id } = useParams();
-    const router = useRouter();
-    const [product, setProduct] = useState(null);
-    const [loading, setLoading] = useState(true);
-    const [message, setMessage] = useState(null);
-    const [user, setUser] = useState(null);
+export default function Signin() { //ฟังก์ชั่นคอมโพเนนต์ ชื่อว่า signin 
+    const [isLogin, setIsLogin] = useState(true); //ค่าเริ่มต้นคือ ture เปิดเว็ปมาต้องล็อกอินก่อน
+    const [username, setUsername] = useState(''); //สร้างตัวแปรเก็บข้้อมูล username เร่ิมต้นเป็นค่าว่าง
+    const [password, setPassword] = useState('');//สร้างตัวแปรเก็บข้้อมูล password  เร่ิมต้นเป็นค่าว่าง
+    const [f_name, setFname] = useState(''); //สร้างตัวแปรเก็บชื่อจริง
+    const [l_name, setLname] = useState(''); //สร้างตัวแปรเก็บนามามสกุล
+    const [error, setError] = useState(null);//เก็บข้อมูลเมื่อมีการเข้าสู่ระบบผิดพลาด null เพราะเริ่มต้นไม่มีข้อผิดพลาด
 
-    useEffect(() => {
-        const storedUser = localStorage.getItem('user');
-        if (storedUser) setUser(JSON.parse(storedUser));
+    const handleSubmit = (e) => {e.preventDefault();
+        const url = isLogin ? 'http://localhost:8080/api/login' : 'http://localhost:8080/api/register';
+        const data = isLogin ? { username, password } : { username, password, f_name, l_name };
 
-        axios.get(`http://localhost:8080/api/products/${id}`)
-            .then(res => {
+        axios.post(url, data).then(res => {
                 if (res.data.result) {
-                    setProduct(res.data.data);
+                    if (isLogin) {  
+                        localStorage.setItem('token', res.data.token);
+                        localStorage.setItem('user', JSON.stringify(res.data.user));
+                        window.location.href = '/';
+                    } else {
+                        setIsLogin(true);
+                        setError({ type: 'success', text: 'สมัครสมาชิกสำเร็จ! กรุณาเข้าสู่ระบบ' });
+                    }
                 } else {
-                    setMessage({ type: 'danger', text: res.data.errorMessage });
+                    setError({ type: 'danger', text: res.data.errorMessage || 'เกิดข้อผิดพลาด กรุณาลองใหม่' });
                 }
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error(err);
-                setMessage({ type: 'danger', text: 'ไม่สามารถโหลดข้อมูลสินค้าได้' });
-                setLoading(false);
-            });
-    }, [id]);
-
-    const addToCart = () => {
-        if (!user) {
-            setMessage({ type: 'warning', text: 'กรุณาเข้าสู่ระบบก่อนเลือกซื้อสินค้า' });
-            return;
-        }
-
-        const token = localStorage.getItem('token');
-        axios.post('http://localhost:8080/api/cart',
-            { p_id: product.p_id, quantity: 1 },
-            { headers: { Authorization: `Bearer ${token}` } }
-        ).then(res => {
-            if (res.data.result) {
-                setMessage({ type: 'success', text: 'เพิ่มสินค้าลงในตะกร้าเรียบร้อยแล้ว' });
-            } else {
-                setMessage({ type: 'danger', text: res.data.errorMessage });
-            }
-        }).catch(err => console.error(err));
+            }).catch(err => setError({ type: 'danger', text: 'ไม่สามารถติดต่อเซิร์ฟเวอร์ได้' }));
     };
 
-    if (loading) return (
-        <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
-            <Spinner animation="border" variant="primary" />
-        </Container>
-    );
-
-    if (!product && message) return (
-        <Container className="mt-5">
-            <Alert variant="danger" className="rounded-4 shadow-sm border-0">{message.text}</Alert>
-        </Container>
-    );
-
     return (
-        <Container className="py-5">
-            {message && (
-                <Alert variant={message.type} dismissible onClose={() => setMessage(null)} className="mb-4 border-dark rounded-0">
-                    {message.text}
-                </Alert>
-            )}
-            
-            <Row className="g-0 border border-dark">
-                <Col md={6} className="border-end border-dark">
-                    <div className="p-4 bg-light h-100 d-flex align-items-center justify-content-center">
-                        {product.p_image ? (
-                            <img
-                                src={`http://localhost:8080/product_images/${product.p_image}`}
-                                alt={product.p_name}
-                                className="img-fluid"
-                                style={{ width: '100%', maxHeight: '500px', objectFit: 'contain' }}
-                            />
-                        ) : (
-                            <div className="bg-white d-flex align-items-center justify-content-center text-muted border border-dark" style={{ width: '200px', height: '200px' }}>
-                                ไม่มีรูปภาพ
+        <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '70vh' }}>
+            <Card className="shadow-lg border-0" style={{ width: '100%', maxWidth: '450px', borderRadius: '15px' }}>
+                <Card.Header className="bg-transparent border-0 pt-4">
+                    <Nav variant="pills" className="justify-content-center mb-3">
+                        <Nav.Item>
+                            <Nav.Link active={isLogin} onClick={() => setIsLogin(true)}style={{ cursor: 'pointer', borderRadius: '20px' }}>เข้าสู่ระบบ</Nav.Link>
+                        </Nav.Item>
+                        <Nav.Item>
+                            <Nav.Link active={!isLogin} onClick={() => setIsLogin(false)}
+                                style={{ cursor: 'pointer', borderRadius: '20px' }}>สมัครสมาชิก</Nav.Link>
+                        </Nav.Item>
+                    </Nav>
+                    <h3 className="text-center fw-bold mt-2">
+                        {isLogin ? 'ยินดีต้อนรับกลับมา' : 'สร้างบัญชีใหม่'}
+                    </h3>
+                </Card.Header>
+                <Card.Body className="px-4 pb-5">
+                    {error && <Alert variant={error.type} className="rounded-3 px-3 py-2 small mb-4">{error.text}</Alert>}
+                    <Form onSubmit={handleSubmit}>
+                        {!isLogin && (
+                            <div className="row g-2 mb-3">
+                                <div className="col">
+                                    <Form.Label className="small text-muted">ชื่อจริง</Form.Label>
+                                    <Form.Control type="text" placeholder="ชื่อ" value={f_name} onChange={(e) => setFname(e.target.value)} required className="rounded-3"/>
+                                </div>
+
+                                <div className="col">
+                                    <Form.Label className="small text-muted">นามสกุล</Form.Label>
+                                    <Form.Control type="text" placeholder="นามสกุล" value={l_name} onChange={(e) => setLname(e.target.value)} required className="rounded-3"/>
+                                </div>
                             </div>
                         )}
-                    </div>
-                </Col>
-                <Col md={6}>
-                    <div className="bg-white p-5">
-                        <div className="small text-secondary mb-2">รายละเอียดสินค้า</div>
-                        <h2 className="fw-bold mb-3">{product.p_name}</h2>
-                        <h3 className="fw-bold mb-4">{product.p_price} บาท</h3>
-                        <hr className="border-dark" />
-                        
-                        <div className="my-5">
-                            <div className="mb-2 fw-bold">สถานะสินค้า:</div>
-                            {product.p_stock > 0 ? (
-                                <div className="text-dark">มีสินค้าพร้อมส่ง ({product.p_stock} ชิ้น)</div>
-                            ) : (
-                                <div className="text-danger">สินค้าหมดชั่วคราว</div>
-                            )}
-                        </div>
-
-                        <div className="d-grid gap-2 mt-5">
-                            <Button
-                                variant="dark"
-                                size="lg"
-                                onClick={addToCart}
-                                disabled={product.p_stock === 0}
-                                className="rounded-0 py-3 fw-bold"
-                            >
-                                เพิ่มสินค้าลงตะกร้า
-                            </Button>
-                            <Button
-                                variant="outline-dark"
-                                size="lg"
-                                onClick={() => router.back()}
-                                className="rounded-0 py-3"
-                            >
-                                ย้อนกลับ
-                            </Button>
-                        </div>
-                    </div>
-                </Col>
-            </Row>
+                        <Form.Group className="mb-3">
+                            <Form.Label className="small text-muted">ชื่อผู้ใช้</Form.Label>
+                            <Form.Control type="text" placeholder="Username"value={username} onChange={(e) => setUsername(e.target.value)} required className="rounded-3"/>
+                        </Form.Group>
+                        <Form.Group className="mb-4">
+                            <Form.Label className="small text-muted">รหัสผ่าน</Form.Label>
+                            <Form.Control 
+                                type="password" 
+                                placeholder="Password"
+                                value={password} 
+                                onChange={(e) => setPassword(e.target.value)} 
+                                required 
+                                className="rounded-3"
+                            />
+                        </Form.Group>
+                        <Button variant="primary" type="submit" className="w-100 rounded-pill py-2 fw-bold text-uppercase" style={{ letterSpacing: '1px' }}>
+                            {isLogin ? 'เข้าสู่ระบบ' : 'ลงชื่อเข้าใช้งาน'}
+                        </Button>
+                    </Form>
+                </Card.Body>
+            </Card>
         </Container>
     );
 }
-
 
