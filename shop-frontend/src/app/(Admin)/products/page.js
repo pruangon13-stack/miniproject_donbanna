@@ -4,45 +4,55 @@ import axios from 'axios';
 import { Table, Button, Form, Modal, ModalHeader, ModalTitle, ModalBody, ModalFooter } from 'react-bootstrap';
 
 export default function Products() {
+    //stateเก็บข้อมูล
     const [products, setProducts] = useState([]);
     const [show, setShow] = useState(false);
     const [currentProduct, setCurrentProduct] = useState({ p_id: '', p_name: '', p_price: '', p_stock: '' });
     const [isEdit, setIsEdit] = useState(false);
 
+    //ดึงข้อมูลสินค้าทั้งหมด (Read)
     const fetchProducts = () => {
         axios.get('http://localhost:8080/api/products')
             .then(res => setProducts(res.data.data || []))
             .catch(err => console.error(err));
     };
 
+    //ทำงานทันทีเมื่อโหลดหน้านี้
     useEffect(() => {
         const user = JSON.parse(localStorage.getItem('user'));
         if (!user || user.role !== 'admin') {
             window.location.href = '/';
             return;
         }
+        //ถ้าเป็นเเอดมินดึงข้อมูลมาเเสดง
         fetchProducts();
     }, []);
 
+    //หน้าต่างpop-up
+    //ปิดmodel
     const handleClose = () => {
         setShow(false);
         setCurrentProduct({ p_id: '', p_name: '', p_price: '', p_stock: '' });
     };
 
+    //เปิดmodel,เพิ่ม/เเก้ไข
     const handleShow = (prod = null) => {
         setIsEdit(!!prod);
         if (prod) setCurrentProduct(prod);
         setShow(true);
     };
 
+
+    //บันทึกจากการ add,edit
     const saveProduct = (e) => {
         e.preventDefault();
-        const token = localStorage.getItem('token');
+        const token = localStorage.getItem('token');//ดึง t ยืนยัน api
         const headers = { 
             Authorization: `Bearer ${token}`,
             'Content-Type': 'multipart/form-data'
         };
         
+        //ส่งไปapi
         const formData = new FormData();
         formData.append('p_name', currentProduct.p_name);
         formData.append('p_price', currentProduct.p_price);
@@ -56,20 +66,22 @@ export default function Products() {
 
         axios[method](url, formData, { headers })
             .then(() => {
-                fetchProducts();
+                fetchProducts();//บันทึกละอัพเดตตาราง
                 handleClose();
             }).catch(err => console.error(err));
     };
 
+    //delete
     const deleteProduct = (id) => {
         if (!confirm('คุณต้องการลบสินค้าใช่หรือไม่')) return;
         const token = localStorage.getItem('token');
         axios.delete(`http://localhost:8080/api/products/${id}`, {
             headers: { Authorization: `Bearer ${token}` }
-        }).then(() => fetchProducts())
+        }).then(() => fetchProducts())//ลบเเล้วนำข้อมูลมาอัพเดตตาราง
           .catch(err => console.error(err));
     };
-
+    
+    //เเสดงผล Ui
     return (
         <div>
             <div className="d-flex justify-content-between mb-3">
@@ -106,7 +118,8 @@ export default function Products() {
                 </tbody>
             </Table>
 
-            <Modal show={show} onHide={handleClose}>
+            {/*ปุ่มเพิ่ม,เเก้ไขสินค้าหน้าเว็บ*/}
+            <Modal show={show} onHide={handleClose}> 
                 <ModalHeader closeButton>
                     <ModalTitle>{isEdit ? 'แก้ไขสินค้า' : 'เพิ่มสินค้า'}</ModalTitle>
                 </ModalHeader>
