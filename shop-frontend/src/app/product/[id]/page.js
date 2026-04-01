@@ -1,36 +1,34 @@
-"use client"; // แจ้งว่าคอมโพเนนต์นี้ทำงานที่ฝั่งผู้ใช้ (Client-side)
-import React, { useEffect, useState } from 'react'; // นำเข้า React Hooks สำหรับจัดการ State และ Lifecycle
-import axios from 'axios'; // นำเข้าไลบรารี Axios สำหรับติดต่อ API ระบบหลังบ้าน
-import { Container, Row, Col, Button, Card, Spinner, Alert, Badge } from 'react-bootstrap'; // นำเข้าคอมโพเนนต์ UI จาก Bootstrap
-import { useParams, useRouter } from 'next/navigation'; // useParams ใช้ดึง ID จาก URL, useRouter ใช้สำหรับย้อนกลับ
+"use client"; 
+import React, { useEffect, useState } from 'react'; 
+import axios from 'axios'; 
+import { Container, Row, Col, Button, Card, Spinner, Alert, Badge } from 'react-bootstrap';  
+import { useParams, useRouter } from 'next/navigation'; 
 
 export default function ProductDetail() {
-    // ดึงรหัสสินค้า (id) จาก URL พารามิเตอร์
-    const { id } = useParams();
-    const router = useRouter(); // ตัวช่วยในการย้อนหน้ากลับ
-    // State สำหรับเก็บข้อมูลสินค้า ข้อมูลผู้ใช้ สถานะการโหลด และข้อความแจ้งเตือน
-    const [product, setProduct] = useState(null);
+    //จัดการstate
+    const { id } = useParams();//ดึงพารามิเตอร์
+    const router = useRouter(); 
+    const [product, setProduct] = useState(null);//รายละเอียดสินค้าโหลดมาจากapi
     const [loading, setLoading] = useState(true);
-    const [message, setMessage] = useState(null);
-    const [user, setUser] = useState(null);
+    const [message, setMessage] = useState(null);//เเจ้งเตือนปัญหา
+    const [user, setUser] = useState(null);//เก็บuserที่ล็อคอินอยู่
 
-    // ทำงานทันทีที่ ID ใน URL เปลี่ยนแปลงหรือโหลดหน้าครั้งแรก
+    
+    //ดึงข้อมูลเข้าหน้าเว็บ
     useEffect(() => {
-        // ตรวจสอบสถานะการล็อกอินจาก LocalStorage
+         //มีการล็อคอินไหม
         const storedUser = localStorage.getItem('user');
         if (storedUser) setUser(JSON.parse(storedUser));
 
-        // ดึงข้อมูลรายระเอียดสินค้าจาก API โดยระบุ ID ของสินค้าที่ต้องการ
-        axios.get(`http://localhost:8080/api/products/${id}`)
+        axios.get(`http://localhost:8080/api/products/${id}`)//ดึงid
             .then(res => {
                 if (res.data.result) {
-                    // หากสำเร็จ ให้เก็บข้อมูลสินค้าไว้ใน State product
                     setProduct(res.data.data);
                 } else {
-                    // หากไม่สำเร็จ ให้แสดงข้อความแจ้งเตือนความผิดพลาด
+                    
                     setMessage({ type: 'danger', text: res.data.errorMessage });
                 }
-                setLoading(false); // เมื่อโหลดเสร็จให้ปิดสถานะ Loading
+                setLoading(false); 
             })
             .catch(err => {
                 console.error(err);
@@ -39,31 +37,30 @@ export default function ProductDetail() {
             });
     }, [id]);
 
-    // ฟังก์ชันสำหรับเพิ่มสินค้าชิ้นนี้ลงตะกร้า
+    
+    //ฟังก์ชั่นทำงาน
     const addToCart = () => {
-        // ตรวจสอบก่อนว่าล็อกอินหรือยัง
         if (!user) {
             setMessage({ type: 'warning', text: 'กรุณาเข้าสู่ระบบก่อนเลือกซื้อสินค้า' });
             return;
         }
 
-        // ดึง Token มาแนบใน Header เพื่อบอก API ว่าเป็นตะกร้าของใคร
+
         const token = localStorage.getItem('token');
         axios.post('http://localhost:8080/api/cart',
             { p_id: product.p_id, quantity: 1 },
             { headers: { Authorization: `Bearer ${token}` } }
         ).then(res => {
             if (res.data.result) {
-                // แจ้งเตือนเมื่อเพิ่มสำเร็จ
                 setMessage({ type: 'success', text: 'เพิ่มสินค้าลงในตะกร้าเรียบร้อยแล้ว' });
             } else {
-                // แจ้งเตือนความผิดพลาดจากระบบหลังบ้าน
                 setMessage({ type: 'danger', text: res.data.errorMessage });
             }
         }).catch(err => console.error(err));
     };
 
-    // แสดงตัวหมุนรอโหลด (Spinner) ระหว่างที่ข้อมูลยังไม่ส่งกลับมา
+   
+    //เเสดงผลUi
     if (loading) return (
         <Container className="d-flex justify-content-center align-items-center" style={{ minHeight: '60vh' }}>
             <Spinner animation="border" variant="primary" />
@@ -86,10 +83,9 @@ export default function ProductDetail() {
                 </Alert>
             )}
             
-            {/* โครงสร้างแสดงข้อมูลสินค้าแบบ 2 คอลัมน์ (ซ้ายรูป - ขวาเนื้อหา) */}
+           
             <Row className="g-0 border border-dark">
                 <Col md={6} className="border-end border-dark">
-                    {/* ส่วนแสดงรูปภาพสินค้า */}
                     <div className="p-4 bg-light h-100 d-flex align-items-center justify-content-center">
                         {product.p_image ? (
                             <img
@@ -106,7 +102,7 @@ export default function ProductDetail() {
                     </div>
                 </Col>
                 <Col md={6}>
-                    {/* ส่วนแสดงเนื้อหารายละเอียดสินค้า */}
+                   
                     <div className="bg-white p-5">
                         <div className="small text-secondary mb-2">รายละเอียดสินค้า</div>
                         <h2 className="fw-bold mb-3">{product.p_name}</h2>
@@ -114,7 +110,6 @@ export default function ProductDetail() {
                         <hr className="border-dark" />
                         
                         <div className="my-5">
-                            {/* แสดงจำนวนสินค้าคงเหลือในคลัง (ดึงจาก p_stock) */}
                             <div className="mb-2 fw-bold">สถานะสินค้า:</div>
                             {product.p_stock > 0 ? (
                                 <div className="text-dark">มีสินค้า ({product.p_stock} ชิ้น)</div>
@@ -123,7 +118,7 @@ export default function ProductDetail() {
                             )}
                         </div>
 
-                        {/* กลุ่มปุ่มคำสั่ง (เพิ่มลงตะกร้า / ย้อนกลับ) */}
+                      
                         <div className="d-grid gap-2 mt-5">
                             <Button
                                 variant="dark"
@@ -138,7 +133,6 @@ export default function ProductDetail() {
                             <Button
                                 variant="outline-dark"
                                 size="lg"
-                                // ฟังก์ชันย้อนกลับไปหน้าก่อนหน้า
                                 onClick={() => router.back()}
                                 className="rounded-0 py-3"
                             >
