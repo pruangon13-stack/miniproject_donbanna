@@ -1,29 +1,35 @@
-"use client";
+"use client";//ทำงานฝั่งbrowser 
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import { Table, Container, Button, Badge } from 'react-bootstrap';
+import { Table, Container, Button, Badge } from 'react-bootstrap';//ถ้ามีการimport รูปไม่ได้ให้ใช้โคดส่วนนี้
 
 export default function History() {
+    //สร้างstate เก็บประวัติสั่งซื้อ เริ่ม[]
     const [history, setHistory] = useState([]);
 
     useEffect(() => {
+        //เช็คว่าล็อคอินหรือยัง
         const token = localStorage.getItem('token');
+        //ถ้าไม่มีการล็อคอินกลับไปหน้า/sigin
         if (!token) {
             window.location.href = '/signin';
             return;
         }
-
-        axios.get('http://localhost:8080/api/history', {
-            headers: { Authorization: `Bearer ${token}` }
-        }).then(res => setHistory(res.data.data || []))
+       
+        //ดึงAPI
+        axios.get('http://localhost:8080/api/history', { 
+            headers: { Authorization: `Bearer ${token}` }// ยืนยันตัวตนกับ backend
+        }).then(res => setHistory(res.data.data || []))//สำเร็จเก็บในhistory
           .catch(err => console.error(err));
     }, []);
 
+    //จัดการวันที่
     const formatDate = (dateString) => {
         const options = { year: 'numeric', month: 'long', day: 'numeric', hour: '2-digit', minute: '2-digit' };
         return new Date(dateString).toLocaleDateString('th-TH', options);
     };
 
+    //เเสดงผลUi
     return (
         <Container className="py-5">
             <div className="mb-4 border-bottom border-dark pb-2">
