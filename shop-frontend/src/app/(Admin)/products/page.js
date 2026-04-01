@@ -6,7 +6,7 @@ import { Table, Button, Form, Modal, ModalHeader, ModalTitle, ModalBody, ModalFo
 export default function Products() {
     //stateเก็บข้อมูล
     const [products, setProducts] = useState([]);
-    const [show, setShow] = useState(false);
+    const [show, setShow] = useState(false);//เปิดปิดpop-up
     const [currentProduct, setCurrentProduct] = useState({ p_id: '', p_name: '', p_price: '', p_stock: '' });
     const [isEdit, setIsEdit] = useState(false);
 
